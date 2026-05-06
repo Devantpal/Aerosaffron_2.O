@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>AeroSaffron – Smart Aeroponics Dashboard</title>
+<link rel="stylesheet" href="style.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container"></div>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🌿</div>
+    <span>Saffron Aeroponics</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a class="nav-item active" data-page="dashboard">
+      <span class="nav-icon">📊</span> Dashboard
+    </a>
+    <a class="nav-item" data-page="control">
+      <span class="nav-icon">⚙️</span> Device Control
+    </a>
+    <a class="nav-item" data-page="automation">
+      <span class="nav-icon">🤖</span> Automation Rules
+    </a>
+    <a class="nav-item" data-page="analytics">
+      <span class="nav-icon">📈</span> Data Analytics
+    </a>
+    <a class="nav-item" data-page="alerts">
+      <span class="nav-icon">🔔</span> Alerts
+    </a>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <a class="nav-item logout" onclick="showToast('Logout not available in demo', 'info')">
+      <span class="nav-icon">🚪</span> Logout
+    </a>
+  </div>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <h1 class="topbar-title">Dashboard</h1>
+    <div class="topbar-right">
+      <div class="conn-indicator disconnected" id="device-status-pill">
+        <span class="conn-dot"></span>Device Offline
+      </div>
+      <div class="user-badge">
+        <div class="user-avatar">👤</div>
+        Aman
+      </div>
+    </div>
+  </header>
+
+  <div class="page-content">
+
+    <!-- ======================================================= -->
+    <!-- PAGE: DASHBOARD -->
+    <!-- ======================================================= -->
+    <section class="page-section active" id="page-dashboard">
+
+      <!-- Sensor Cards -->
+      <div class="sensor-grid">
+        <div class="sensor-card">
+          <div class="sensor-icon-wrap temp">🌡️</div>
+          <div class="sensor-info">
+            <div class="sensor-label">Temperature</div>
+            <div class="sensor-value" id="temp-val">--°C</div>
+            <div class="sensor-sub" id="temp-sub">Loading...</div>
+          </div>
+        </div>
+
+        <div class="sensor-card">
+          <div class="sensor-icon-wrap hum">💧</div>
+          <div class="sensor-info">
+            <div class="sensor-label">Humidity</div>
+            <div class="sensor-value" id="hum-val">--%</div>
+            <div class="sensor-sub" id="hum-sub">Loading...</div>
+          </div>
+        </div>
+
+        <div class="sensor-card">
+          <div class="sensor-icon-wrap water">🌊</div>
+          <div class="sensor-info">
+            <div class="sensor-label">Lux</div>
+            <div class="sensor-value" id="lux-val">-- lx</div>
+            <div class="sensor-sub" id="lux-sub">Loading...</div>
+          </div>
+        </div>
+
+        <div class="sensor-card" id="dash-card-pump">
+          <div class="sensor-icon-wrap pump">⚡</div>
+          <div class="sensor-info">
+            <div class="sensor-label">Mist Pump</div>
+            <div style="margin:6px 0;">
+              <span class="badge badge-off" id="dash-pump">OFF</span>
+            </div>
+            <div class="sensor-sub" id="status-pump-dash">Inactive</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Second row: LED & Fan status -->
+      <div class="sensor-grid" style="grid-template-columns: repeat(4,1fr); margin-bottom:20px;">
+        <div class="sensor-card" id="device-online-card">
+          <div class="sensor-icon-wrap pump">â—</div>
+          <div class="sensor-info">
+            <div class="sensor-label">Device Status</div>
+            <div style="margin:6px 0;">
+              <span class="badge badge-off" id="device-online-text">Device Offline</span>
+            </div>
+            <div class="sensor-sub" id="device-online-sub">Waiting for heartbeat</div>
+          </div>
+        </div>
+
+        <div class="sensor-card" id="dash-card-light">
+          <div class="sensor-icon-wrap light-s">💡</div>
+          <div class="sensor-info">
+            <div class="sensor-label">LED Status</div>
+            <div style="margin:6px 0;">
+              <span class="badge badge-off" id="dash-light">OFF</span>
+            </div>
+            <div class="sensor-sub">Light Control</div>
+          </div>
+        </div>
+
+        <div class="sensor-card" id="dash-card-fan">
+          <div class="sensor-icon-wrap fan">🌀</div>
+          <div class="sensor-info">
+            <div class="sensor-label">Fan Status</div>
+            <div style="margin:6px 0;">
+              <span class="badge badge-off" id="dash-fan">OFF</span>
+            </div>
+            <div class="sensor-sub">Ventilation</div>
+          </div>
+        </div>
+
+        <div class="sensor-card" id="dash-card-peltier">
+          <div class="sensor-icon-wrap cool">❄️</div>
+          <div class="sensor-info">
+            <div class="sensor-label">Cooling</div>
+            <div style="margin:6px 0;">
+              <span class="badge badge-off" id="dash-peltier">OFF</span>
+            </div>
+            <div class="sensor-sub">Peltier Module</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-grid">
+        <div class="card">
+          <div class="card-title">Temperature History</div>
+          <div class="chart-container">
+            <canvas id="dash-temp-chart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Humidity History</div>
+          <div class="chart-container">
+            <canvas id="dash-hum-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Controls -->
+      <div class="card mt-4">
+        <div class="flex-between mb-4">
+          <div class="card-title" style="margin-bottom:0">Quick Device Controls</div>
+          <div class="mode-control-wrap">
+            <span class="text-muted text-sm" id="control-mode-text">Auto Control</span>
+            <div class="segmented-control">
+              <button type="button" class="seg-btn active" data-control-mode="auto" onclick="setControlMode('auto')">Auto</button>
+              <button type="button" class="seg-btn" data-control-mode="manual" onclick="setControlMode('manual')">Manual</button>
+            </div>
+          </div>
+        </div>
+        <div class="controls-grid">
+          <div class="control-card">
+            <div class="control-left">
+              <div class="sensor-icon-wrap pump" style="width:42px;height:42px;font-size:20px;">⚡</div>
+              <div>
+                <div class="control-name">Mist Pump</div>
+                <div class="control-status" id="status-pump">Inactive</div>
+              </div>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="toggle-pump" class="manual-only" onchange="toggleDevice('pump', this.checked)">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <div class="control-left">
+              <div class="sensor-icon-wrap fan" style="width:42px;height:42px;font-size:20px;">🌀</div>
+              <div>
+                <div class="control-name">Ventilation Fan</div>
+                <div class="control-status" id="status-fan">Inactive</div>
+              </div>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="toggle-fan" class="manual-only" onchange="toggleDevice('fan', this.checked)">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <div class="control-left">
+              <div class="sensor-icon-wrap light-s" style="width:42px;height:42px;font-size:20px;">💡</div>
+              <div>
+                <div class="control-name">LED Grow Lights</div>
+                <div class="control-status" id="status-light">Inactive</div>
+              </div>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="toggle-light" class="manual-only" onchange="toggleDevice('light', this.checked)">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <div class="control-left">
+              <div class="sensor-icon-wrap cool" style="width:42px;height:42px;font-size:20px;">❄️</div>
+              <div>
+                <div class="control-name">Cooling (Peltier)</div>
+                <div class="control-status" id="status-peltier">Inactive</div>
+              </div>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="toggle-peltier" class="manual-only" onchange="toggleDevice('peltier', this.checked)">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================= -->
+    <!-- PAGE: DEVICE CONTROL -->
+    <!-- ======================================================= -->
+    <section class="page-section" id="page-control">
+
+      <!-- Settings -->
+      <div class="card mb-5">
+        <div class="flex-between mb-4">
+          <div class="card-title" style="margin:0;">Device Settings</div>
+          <div class="segmented-control">
+            <button type="button" class="seg-btn active" data-control-mode="auto" onclick="setControlMode('auto')">Auto</button>
+            <button type="button" class="seg-btn" data-control-mode="manual" onclick="setControlMode('manual')">Manual</button>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🌡️</span> Temperature Setpoint (°C)</label>
+            <input type="number" class="form-input" id="inp-tempSet" value="23" min="15" max="40" step="0.5"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">💧</span> Humidity Setpoint (%)</label>
+            <input type="number" class="form-input" id="inp-humSet" value="65" min="20" max="100"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🕕</span> LED Start Time</label>
+            <input type="time" class="form-input" id="inp-ledStart" value="06:00"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🕙</span> LED End Time</label>
+            <input type="time" class="form-input" id="inp-ledEnd" value="22:00"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">⏱</span> Mist Duration (seconds)</label>
+            <input type="number" class="form-input" id="inp-mistDuration" value="30" min="5" max="300"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🕐</span> Mist Interval (minutes)</label>
+            <input type="number" class="form-input" id="inp-mistInterval" value="15" min="1" max="120"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">Fan</span> Fan Min Temp (C)</label>
+            <input type="number" class="form-input" id="inp-fanMin" value="24" min="0" max="60" step="0.5"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">Fan</span> Fan Max Temp (C)</label>
+            <input type="number" class="form-input" id="inp-fanMax" value="30" min="0" max="60" step="0.5"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">Lux</span> Light Min Lux</label>
+            <input type="number" class="form-input" id="inp-lightMin" value="120" min="0" max="10000"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">Lux</span> Light Max Lux</label>
+            <input type="number" class="form-input" id="inp-lightMax" value="350" min="0" max="10000"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">Cool</span> Peltier Min Temp (C)</label>
+            <input type="number" class="form-input" id="inp-peltierMin" value="18" min="0" max="60" step="0.5"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">Cool</span> Peltier Max Temp (C)</label>
+            <input type="number" class="form-input" id="inp-peltierMax" value="26" min="0" max="60" step="0.5"/>
+          </div>
+        </div>
+        <div style="margin-top:20px;">
+          <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+        </div>
+      </div>
+
+      <!-- Real-Time Device Status -->
+      <div class="card">
+        <div class="card-title">Real-Time Device Status</div>
+        <div class="controls-grid">
+          <div class="control-card">
+            <div class="control-left">
+              <div class="sensor-icon-wrap pump" style="width:42px;height:42px;font-size:20px;">⚡</div>
+              <div>
+                <div class="control-name">Mist Pump</div>
+                <div class="control-status" id="ctrl-status-pump">Inactive</div>
+              </div>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="toggle-pump-ctrl" class="manual-only" onchange="toggleDevice('pump', this.checked); document.getElementById('toggle-pump').checked = this.checked;">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <div class="control-left">
+              <div class="sensor-icon-wrap fan" style="width:42px;height:42px;font-size:20px;">🌀</div>
+              <div>
+                <div class="control-name">Ventilation Fan</div>
+                <div class="control-status" id="ctrl-status-fan">Inactive</div>
+              </div>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="toggle-fan-ctrl" class="manual-only" onchange="toggleDevice('fan', this.checked); document.getElementById('toggle-fan').checked = this.checked;">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <div class="control-left">
+              <div class="sensor-icon-wrap light-s" style="width:42px;height:42px;font-size:20px;">💡</div>
+              <div>
+                <div class="control-name">LED Grow Lights</div>
+                <div class="control-status" id="ctrl-status-light">Inactive</div>
+              </div>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="toggle-light-ctrl" class="manual-only" onchange="toggleDevice('light', this.checked); document.getElementById('toggle-light').checked = this.checked;">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <div class="control-left">
+              <div class="sensor-icon-wrap cool" style="width:42px;height:42px;font-size:20px;">❄️</div>
+              <div>
+                <div class="control-name">Cooling (Peltier)</div>
+                <div class="control-status" id="ctrl-status-peltier">Inactive</div>
+              </div>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="toggle-peltier-ctrl" class="manual-only" onchange="toggleDevice('peltier', this.checked); document.getElementById('toggle-peltier').checked = this.checked;">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================= -->
+    <!-- PAGE: AUTOMATION RULES -->
+    <!-- ======================================================= -->
+    <section class="page-section" id="page-automation">
+
+      <div class="card">
+        <div class="card-title">Automation Rules</div>
+        <div class="rules-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:60px;">ID</th>
+                <th>Condition</th>
+                <th>Action</th>
+                <th style="width:120px;">Status</th>
+                <th style="width:120px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="rules-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="add-rule-form">
+          <div class="card-title" style="font-size:15px;">Create New Rule</div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr auto;align-items:end;gap:12px;">
+            <div class="form-group">
+              <label class="form-label"><span>❓</span> Condition</label>
+              <input type="text" class="form-input" id="inp-condition" placeholder="e.g., IF temperature > 26°C"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label"><span>⚡</span> Action</label>
+              <input type="text" class="form-input" id="inp-action" placeholder="e.g., THEN fan ON"/>
+            </div>
+            <button class="btn btn-primary" onclick="addRule()" style="height:42px;">+ Add Rule</button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================= -->
+    <!-- PAGE: DATA ANALYTICS -->
+    <!-- ======================================================= -->
+    <section class="page-section" id="page-analytics">
+
+      <div class="card mb-5">
+        <div class="flex-between">
+          <div class="card-title" style="margin:0;">Data Analytics</div>
+          <button class="btn btn-primary btn-sm" onclick="downloadCSV()">⬇️ Download CSV</button>
+        </div>
+        <div class="date-filter" style="margin-top:16px;">
+          <label>📅 From:</label>
+          <input type="date" class="form-input" id="ana-from" style="width:160px;padding:8px 12px;"/>
+          <label>To:</label>
+          <input type="date" class="form-input" id="ana-to" style="width:160px;padding:8px 12px;"/>
+          <button class="btn btn-outline btn-sm" onclick="showToast('Filter applied','info')">Apply Filter</button>
+        </div>
+      </div>
+
+      <div class="charts-grid mb-5">
+        <div class="card">
+          <div class="card-title">Temperature History</div>
+          <div class="chart-container">
+            <canvas id="analytics-temp-chart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Humidity History</div>
+          <div class="chart-container">
+            <canvas id="analytics-hum-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Pump Activity Timeline</div>
+        <div class="chart-container" style="height:200px;">
+          <canvas id="analytics-pump-chart"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================= -->
+    <!-- PAGE: ALERTS -->
+    <!-- ======================================================= -->
+    <section class="page-section" id="page-alerts">
+
+      <div class="card">
+        <div class="flex-between mb-4">
+          <div class="card-title" style="margin:0;">System Alerts</div>
+          <span class="text-muted text-sm" id="alert-msg-badge">System Normal</span>
+        </div>
+
+        <div class="rules-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="alert-type-col">Type</th>
+                <th class="alert-time-col">Timestamp</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody id="alerts-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </div><!-- /page-content -->
+</main>
+
+<script type="module" src="app.js"></script>
+
+<script>
+// Sync ctrl page toggles with main toggles
+function syncCtrlToggles() {
+  ['pump','fan','light','peltier'].forEach(d => {
+    const main = document.getElementById(`toggle-${d}`);
+    const ctrl = document.getElementById(`toggle-${d}-ctrl`);
+    if (main && ctrl) {
+      const mainChecked = main.checked;
+      ctrl.checked = mainChecked;
+    }
+
+    const ctrlStatus = document.getElementById(`ctrl-status-${d}`);
+    const mainStatus = document.getElementById(`status-${d}`);
+    if (ctrlStatus && mainStatus) ctrlStatus.textContent = mainStatus.textContent;
+  });
+}
+
+// Set default date range for analytics
+window.addEventListener('DOMContentLoaded', () => {
+  const today = new Date();
+  const weekAgo = new Date(today); weekAgo.setDate(today.getDate() - 7);
+  const fmt = d => d.toISOString().split('T')[0];
+  const fromEl = document.getElementById('ana-from');
+  const toEl = document.getElementById('ana-to');
+  if (fromEl) fromEl.value = fmt(weekAgo);
+  if (toEl) toEl.value = fmt(today);
+});
+
+// Keep ctrl page in sync with Firebase updates
+const origUpdateControlsUI = window.AeroApp;
+setInterval(() => {
+  if (window.AeroApp) syncCtrlToggles();
+}, 1000);
+</script>
+
+</body>
+</html>

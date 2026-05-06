@@ -1,0 +1,57 @@
+{
+  "aerosaffron": {
+    "sensors": {
+      "temperature": 25,
+      "humidity": 60,
+      "lux": 200,
+      "light": 200
+    },
+    "controls": {
+      "pump": 0,
+      "light": 0,
+      "fan": 0,
+      "peltier": 0,
+      "_refresh": 0
+    },
+    "settings": {
+      "controlMode": "auto",
+      "tempSet": 23,
+      "humSet": 65,
+      "mistDuration": 30,
+      "mistInterval": 15,
+      "ledStart": "06:00",
+      "ledEnd": "22:00",
+      "fanMin": 24,
+      "fanMax": 30,
+      "lightMin": 120,
+      "lightMax": 350,
+      "peltierMin": 18,
+      "peltierMax": 26
+    },
+    "device": {
+      "online": false,
+      "lastSeen": 0,
+      "ip": ""
+    },
+    "alerts": {
+      "msg": "System Normal"
+    },
+    "automation": {
+      "rule1": {
+        "condition": "temperature > 30",
+        "action": "fan_on",
+        "status": 1
+      },
+      "rule2": {
+        "condition": "lux < 120",
+        "action": "light_on",
+        "status": 1
+      },
+      "rule3": {
+        "condition": "temperature > 26",
+        "action": "peltier_on",
+        "status": 1
+      }
+    }
+  }
+}
