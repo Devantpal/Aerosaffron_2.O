@@ -36,7 +36,7 @@ window.AeroApp = {
     peltierMax: 26
   },
   alerts: { msg: "System Normal" },
-  device: { online: false, lastSeen: 0, ip: "" },
+  device: { online: false, lastSeen: 0, ip: "", heartbeatReceivedAt: 0 },
   tempHistory: [],
   humHistory: [],
   pumpHistory: [],
@@ -132,7 +132,7 @@ function initFirebase() {
 
   onValue(ref(db, 'aerosaffron/device'), (snap) => {
     if (snap.exists()) {
-      AeroApp.device = { ...AeroApp.device, ...snap.val() };
+      AeroApp.device = { ...AeroApp.device, ...snap.val(), heartbeatReceivedAt: Date.now() };
       updateDeviceStatusUI();
     }
   });
@@ -175,11 +175,21 @@ function setConnected(state) {
 }
 
 function updateDeviceStatusUI() {
-  const lastSeen = Number(AeroApp.device.lastSeen || 0);
-  const fresh = lastSeen > 0 && (Date.now() - lastSeen) < 20000;
-  const online = AeroApp.device.online === true && fresh;
+  const now = Date.now();
+  const rawLastSeen = Number(AeroApp.device.lastSeen || 0);
+  const lastSeen = rawLastSeen > 0 && rawLastSeen < 1000000000000 ? rawLastSeen * 1000 : rawLastSeen;
+  const epochFresh = lastSeen > 1000000000000 && Math.abs(now - lastSeen) < 30000;
+  const eventFresh = AeroApp.device.heartbeatReceivedAt > 0 && (now - AeroApp.device.heartbeatReceivedAt) < 30000;
+  const onlineFlag = AeroApp.device.online === true || AeroApp.device.online === 1 || AeroApp.device.online === 'true';
+  const fresh = epochFresh || eventFresh;
+  const online = onlineFlag && fresh;
+  AeroApp.device.isOnline = online;
   const statusText = online ? 'Device Online' : 'Device Offline';
-  const detailText = lastSeen ? `Last seen ${new Date(lastSeen).toLocaleString('en-IN', { hour12: false })}` : 'Waiting for heartbeat';
+  const detailText = lastSeen > 1000000000000
+    ? `Last seen ${new Date(lastSeen).toLocaleString('en-IN', { hour12: false })}`
+    : eventFresh
+      ? `Heartbeat received ${new Date(AeroApp.device.heartbeatReceivedAt).toLocaleString('en-IN', { hour12: false })}`
+      : 'Waiting for heartbeat';
 
   const top = document.getElementById('device-status-pill');
   if (top) {
@@ -196,17 +206,31 @@ function updateDeviceStatusUI() {
   }
   const sub = document.getElementById('device-online-sub');
   if (sub) sub.textContent = detailText;
+  updateSensorUI();
+  updateControlsUI();
 }
 
 // ===== SENSOR UI =====
 function updateSensorUI() {
-  const s = AeroApp.sensors;
+  const s = AeroApp.device.isOnline === true
+    ? AeroApp.sensors
+    : { temperature: 0, humidity: 0, lux: 0, light: 0 };
   const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
   setVal('temp-val', `${s.temperature}°C`);
   setVal('hum-val', `${s.humidity}%`);
   setVal('lux-val', `${s.lux} lx`);
   setVal('light-val', `${s.lux} lx`);
+
+  if (AeroApp.device.isOnline !== true) {
+    const tempEl = document.getElementById('temp-sub');
+    const humEl = document.getElementById('hum-sub');
+    const luxEl = document.getElementById('lux-sub');
+    if (tempEl) tempEl.textContent = 'Device Offline';
+    if (humEl) humEl.textContent = 'Device Offline';
+    if (luxEl) luxEl.textContent = 'Device Offline';
+    return;
+  }
 
   // Status hints
   const tempEl = document.getElementById('temp-sub');
@@ -229,16 +253,21 @@ function updateSensorUI() {
 
 // ===== CONTROLS UI =====
 function updateControlsUI() {
-  const c = AeroApp.controls;
+  const c = AeroApp.device.isOnline === true
+    ? AeroApp.controls
+    : { pump: 0, fan: 0, light: 0, peltier: 0 };
+  const manualEnabled = AeroApp.settings.controlMode === 'manual' && AeroApp.device.isOnline === true;
 
   ['pump', 'fan', 'light', 'peltier'].forEach(device => {
     const toggle = document.getElementById(`toggle-${device}`);
     if (toggle) toggle.checked = c[device] === 1;
-    if (toggle) toggle.disabled = AeroApp.settings.controlMode !== 'manual';
+    if (toggle) toggle.disabled = !manualEnabled;
 
     const statusEl = document.getElementById(`status-${device}`);
     if (statusEl) {
-      statusEl.textContent = c[device] === 1 ? 'Active' : 'Inactive';
+      statusEl.textContent = AeroApp.device.isOnline === true
+        ? c[device] === 1 ? 'Active' : 'Inactive'
+        : 'Device Offline';
     }
 
     // Dashboard device status
@@ -260,7 +289,7 @@ function updateControlModeUI() {
   document.querySelectorAll('[data-control-mode]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.controlMode === mode);
   });
-  const manual = mode === 'manual';
+  const manual = mode === 'manual' && AeroApp.device.isOnline === true;
   document.querySelectorAll('.manual-only').forEach(el => {
     el.disabled = !manual;
     el.classList.toggle('disabled', !manual);

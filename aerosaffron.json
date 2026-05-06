@@ -30,7 +30,7 @@
     },
     "device": {
       "online": false,
-      "lastSeen": 0,
+      "lastSeen": "0",
       "ip": ""
     },
     "alerts": {

@@ -203,16 +203,19 @@ void pushAlert(const String& msg) {
 
 void pushHeartbeat() {
   time_t now = time(nullptr);
-  long   ts  = (now > 100000) ? (long)(now) * 1000L   // real epoch ms
-                               : (long)millis();       // fallback: uptime ms
+  unsigned long long ts = (now > 100000)
+    ? ((unsigned long long)now * 1000ULL)
+    : (unsigned long long)millis();
+  char tsBuf[24];
+  snprintf(tsBuf, sizeof(tsBuf), "%llu", ts);
 
   fbSetBool("aerosaffron/device/online", true);
   fbSetStr ("aerosaffron/device/ip",     WiFi.localIP().toString());
   // lastSeen must be a number – app.js: (Date.now() - lastSeen) < 20000
-  Firebase.RTDB.setInt(&fbSet, "aerosaffron/device/lastSeen", (int)ts);
+  fbSetStr ("aerosaffron/device/lastSeen", String(tsBuf));
 
-  Serial.printf("[Heart] online=true  ts=%ld  ip=%s\n",
-                ts, WiFi.localIP().toString().c_str());
+  Serial.printf("[Heart] online=true  ts=%s  ip=%s\n",
+                tsBuf, WiFi.localIP().toString().c_str());
 }
 
 // ═══════════════════════════════════════════════════════════════
